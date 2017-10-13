@@ -1,5 +1,8 @@
 # Pack
 
+![An example of Pack](https://user-images.githubusercontent.com/449385/31547153-322cd1b8-b01e-11e7-8810-4c0caaa55401.png)
+
+
 A tool for viewing the contents of a `package.json` file.
 
 ## Build steps
