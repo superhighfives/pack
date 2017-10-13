@@ -11,6 +11,23 @@ A tool for viewing the contents of a `package.json` file.
 brew install superhighfives/tools/pack
 ```
 
+## Run
+
+Then just run `pack` in any directory with a `package.json` file:
+
+```
+Available script commands in package.json
+-----------------------------------------
+     start react-scripts start
+start-prod yarn build && node app.js
+     build react-scripts build
+      test react-scripts test --env=jsdom
+     eject react-scripts eject
+      flow flow
+```
+
+🍻
+
 ## Build steps
 
 ```
