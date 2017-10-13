@@ -1,0 +1,14 @@
+{
+  "name": "test-package-file",
+  "scripts": {
+    "start": "react-scripts start",
+    "start-prod": "yarn build && node app.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "flow": "flow"
+  },
+  "devDependencies": {
+    "standard": "^10.0.3"
+  }
+}
