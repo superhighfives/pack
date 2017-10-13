@@ -5,7 +5,7 @@
 
 A tool for viewing the contents of a `package.json` file.
 
-## Installing
+## Installing ([via Brew](https://brew.sh/))
 
 ```
 brew install superhighfives/tools/pack
