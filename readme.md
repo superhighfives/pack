@@ -5,6 +5,12 @@
 
 A tool for viewing the contents of a `package.json` file.
 
+## Installing
+
+```
+brew install superhighfives/tools/pack
+```
+
 ## Build steps
 
 ```
