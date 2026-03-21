@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"unicode/utf8"
 
-	"github.com/douglarek/leftpad"
 	"github.com/fatih/color"
 	"github.com/tidwall/gjson"
 )
@@ -16,27 +14,27 @@ func main() {
 	intro.Println("Available script commands in package.json")
 	intro.Println("-----------------------------------------")
 
-	file, e := ioutil.ReadFile("./package.json")
-	if e != nil {
-		fmt.Printf("File error: %v\n", e)
+	file, err := os.ReadFile("./package.json")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "File error: %v\n", err)
 		os.Exit(1)
 	}
-	json := string(file)
-	scripts := gjson.Get(json, "scripts")
+
+	scripts := gjson.GetBytes(file, "scripts")
 
 	title := color.New(color.FgHiWhite, color.Bold)
 	command := color.New(color.FgWhite)
 
 	length := 0
 	scripts.ForEach(func(key, value gjson.Result) bool {
-		if utf8.RuneCountInString(key.String()) > length {
-			length = utf8.RuneCountInString(key.String())
+		if n := utf8.RuneCountInString(key.String()); n > length {
+			length = n
 		}
 		return true
 	})
 
 	scripts.ForEach(func(key, value gjson.Result) bool {
-		title.Print(leftpad.Leftpad(key.String(), length, ' '))
+		title.Print(fmt.Sprintf("%*s", length, key.String()))
 		command.Printf(" %s\n", value.String())
 		return true
 	})

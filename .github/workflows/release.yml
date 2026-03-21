@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: macos-latest
+    outputs:
+      version: ${{ env.VERSION }}
+      sha256: ${{ env.SHA256 }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -ldflags="-s -w" -o pack .
+
+      - name: Create tarball
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          tar -czf pack-${VERSION}.tar.gz pack
+          SHA256=$(shasum -a 256 pack-${VERSION}.tar.gz | awk '{print $1}')
+          echo "${SHA256}  pack-${VERSION}.tar.gz" > pack-${VERSION}.tar.gz.sha256
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "SHA256=${SHA256}" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
+        with:
+          files: |
+            pack-${{ env.VERSION }}.tar.gz
+            pack-${{ env.VERSION }}.tar.gz.sha256
+          generate_release_notes: true
+
+  update-formula:
+    name: Update Homebrew formula
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: superhighfives/homebrew-tools
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update pack.rb
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+          SHA256: ${{ needs.release.outputs.sha256 }}
+        run: |
+          URL="https://github.com/superhighfives/pack/releases/download/v${VERSION}/pack-${VERSION}.tar.gz"
+          sed -i "s|url \".*\"|url \"${URL}\"|" pack.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" pack.rb
+          sed -i "s|version \".*\"|version \"${VERSION}\"|" pack.rb
+
+      - name: Open PR
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          commit-message: "Update pack to v${{ needs.release.outputs.version }}"
+          title: "Update pack to v${{ needs.release.outputs.version }}"
+          body: |
+            Automated formula update from [superhighfives/pack](https://github.com/superhighfives/pack/releases/tag/v${{ needs.release.outputs.version }}).
+
+            - Version: `${{ needs.release.outputs.version }}`
+            - SHA256: `${{ needs.release.outputs.sha256 }}`
+          branch: "update-pack-v${{ needs.release.outputs.version }}"
+          base: master
