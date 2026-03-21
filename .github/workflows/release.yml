@@ -12,6 +12,9 @@ jobs:
   release:
     name: Build and release
     runs-on: macos-latest
+    outputs:
+      version: ${{ env.VERSION }}
+      sha256: ${{ env.SHA256 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,9 +29,10 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           tar -czf pack-${VERSION}.tar.gz pack
-          shasum -a 256 pack-${VERSION}.tar.gz > pack-${VERSION}.tar.gz.sha256
+          SHA256=$(shasum -a 256 pack-${VERSION}.tar.gz | awk '{print $1}')
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "TARBALL=pack-${VERSION}.tar.gz" >> $GITHUB_ENV
+          echo "SHA256=${SHA256}" >> $GITHUB_ENV
+          echo "${SHA256}  pack-${VERSION}.tar.gz" > pack-${VERSION}.tar.gz.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -37,3 +41,37 @@ jobs:
             pack-${{ env.VERSION }}.tar.gz
             pack-${{ env.VERSION }}.tar.gz.sha256
           generate_release_notes: true
+
+  update-formula:
+    name: Update Homebrew formula
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: superhighfives/homebrew-tools
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update pack.rb
+        env:
+          VERSION: ${{ needs.release.outputs.version }}
+          SHA256: ${{ needs.release.outputs.sha256 }}
+        run: |
+          URL="https://github.com/superhighfives/pack/releases/download/v${VERSION}/pack-${VERSION}.tar.gz"
+          sed -i "s|url \".*\"|url \"${URL}\"|" pack.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" pack.rb
+          sed -i "s|version \".*\"|version \"${VERSION}\"|" pack.rb
+
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          commit-message: "Update pack to v${{ needs.release.outputs.version }}"
+          title: "Update pack to v${{ needs.release.outputs.version }}"
+          body: |
+            Automated formula update from [superhighfives/pack](https://github.com/superhighfives/pack/releases/tag/v${{ needs.release.outputs.version }}).
+
+            - Version: `${{ needs.release.outputs.version }}`
+            - SHA256: `${{ needs.release.outputs.sha256 }}`
+          branch: "update-pack-v${{ needs.release.outputs.version }}"
+          base: master
