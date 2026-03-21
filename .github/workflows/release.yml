@@ -45,15 +45,27 @@ jobs:
   update-formula:
     name: Update Homebrew formula
     needs: release
-    if: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Check for token
+        id: check
+        env:
+          TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        if: steps.check.outputs.has_token == 'true'
         with:
           repository: superhighfives/homebrew-tools
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update pack.rb
+        if: steps.check.outputs.has_token == 'true'
         env:
           VERSION: ${{ needs.release.outputs.version }}
           SHA256: ${{ needs.release.outputs.sha256 }}
@@ -64,6 +76,7 @@ jobs:
           sed -i "s|version \".*\"|version \"${VERSION}\"|" pack.rb
 
       - name: Open PR
+        if: steps.check.outputs.has_token == 'true'
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
