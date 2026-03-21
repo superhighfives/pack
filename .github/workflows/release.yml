@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -ldflags="-s -w" -o pack .
+
+      - name: Create tarball
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          tar -czf pack-${VERSION}.tar.gz pack
+          shasum -a 256 pack-${VERSION}.tar.gz > pack-${VERSION}.tar.gz.sha256
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "TARBALL=pack-${VERSION}.tar.gz" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            pack-${{ env.VERSION }}.tar.gz
+            pack-${{ env.VERSION }}.tar.gz.sha256
+          generate_release_notes: true
