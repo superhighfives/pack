@@ -16,9 +16,9 @@ jobs:
       version: ${{ env.VERSION }}
       sha256: ${{ env.SHA256 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: go.mod
 
@@ -30,12 +30,12 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           tar -czf pack-${VERSION}.tar.gz pack
           SHA256=$(shasum -a 256 pack-${VERSION}.tar.gz | awk '{print $1}')
+          echo "${SHA256}  pack-${VERSION}.tar.gz" > pack-${VERSION}.tar.gz.sha256
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "SHA256=${SHA256}" >> $GITHUB_ENV
-          echo "${SHA256}  pack-${VERSION}.tar.gz" > pack-${VERSION}.tar.gz.sha256
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           files: |
             pack-${{ env.VERSION }}.tar.gz
@@ -47,7 +47,7 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: superhighfives/homebrew-tools
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
           sed -i "s|version \".*\"|version \"${VERSION}\"|" pack.rb
 
       - name: Open PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           commit-message: "Update pack to v${{ needs.release.outputs.version }}"
