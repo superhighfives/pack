@@ -45,6 +45,12 @@ go run .
 
 This will look for a `package.json` in the current directory. The repo includes one as a test fixture.
 
+### Testing
+
+```
+go test ./...
+```
+
 ### Building
 
 ```
@@ -53,18 +59,31 @@ go build -ldflags="-s -w" -o pack .
 
 The `-ldflags="-s -w"` strips debug symbols to reduce binary size.
 
+## Continuous integration
+
+Every push and pull request runs the CI workflow (`.github/workflows/ci.yml`),
+which checks formatting (`gofmt`), runs `go vet`, builds, and runs the tests.
+
 ## Releases
 
-Releases are fully automated via GitHub Actions. To cut a new release:
+Releases are automated via GitHub Actions. The recommended way to cut a release
+is to bump the version:
 
-1. Push a `v*` tag (e.g. `v1.2.3`):
+1. Update the `VERSION` file (e.g. `1.2.3`) in a pull request and merge it to
+   `master`.
+
+When CI passes on `master`, it checks whether a `v<VERSION>` tag already exists.
+If it doesn't, CI calls the release workflow to build, publish, and update the
+Homebrew formula.
+
+You can also trigger a release manually by pushing a `v*` tag (e.g. `v1.2.3`):
 
 ```
 git tag v1.2.3
 git push origin v1.2.3
 ```
 
-The release workflow (`.github/workflows/release.yml`) then:
+Either path runs the release workflow (`.github/workflows/release.yml`), which:
 
 1. **Builds** the binary on macOS with stripped symbols
 2. **Packages** it into a tarball (`pack-<version>.tar.gz`) with a SHA256 checksum file
