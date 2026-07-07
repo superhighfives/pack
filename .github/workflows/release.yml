@@ -53,9 +53,9 @@ jobs:
           TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           if [ -n "$TOKEN" ]; then
-            echo "has_token=true" >> $GITHUB_OUTPUT
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
