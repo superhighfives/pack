@@ -82,4 +82,4 @@ jobs:
             - Version: `${{ needs.release.outputs.version }}`
             - SHA256: `${{ needs.release.outputs.sha256 }}`
           branch: "update-pack-v${{ needs.release.outputs.version }}"
-          base: master
+          base: main
