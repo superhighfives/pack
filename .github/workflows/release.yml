@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag to release (e.g. v1.2.3)
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,8 +19,8 @@ jobs:
     name: Build and release
     runs-on: macos-latest
     outputs:
-      version: ${{ env.VERSION }}
-      sha256: ${{ env.SHA256 }}
+      version: ${{ steps.build.outputs.version }}
+      sha256: ${{ steps.build.outputs.sha256 }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -22,24 +28,26 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build
-        run: go build -ldflags="-s -w" -o pack .
-
-      - name: Create tarball
+      - name: Build and package
+        id: build
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          go build -ldflags="-s -w" -o pack .
           tar -czf pack-${VERSION}.tar.gz pack
           SHA256=$(shasum -a 256 pack-${VERSION}.tar.gz | awk '{print $1}')
           echo "${SHA256}  pack-${VERSION}.tar.gz" > pack-${VERSION}.tar.gz.sha256
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "SHA256=${SHA256}" >> $GITHUB_ENV
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
+          tag_name: ${{ steps.build.outputs.tag }}
           files: |
-            pack-${{ env.VERSION }}.tar.gz
-            pack-${{ env.VERSION }}.tar.gz.sha256
+            pack-${{ steps.build.outputs.version }}.tar.gz
+            pack-${{ steps.build.outputs.version }}.tar.gz.sha256
           generate_release_notes: true
 
   update-formula:
