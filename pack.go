@@ -30,6 +30,11 @@ func main() {
 
 	scripts := gjson.GetBytes(file, "scripts")
 
+	if scripts.Exists() && !scripts.IsObject() {
+		warning.Fprintln(os.Stderr, "The \"scripts\" field in package.json isn't an object.")
+		os.Exit(1)
+	}
+
 	if !scripts.Exists() || len(scripts.Map()) == 0 {
 		warning.Fprintln(os.Stderr, "No script commands found in package.json.")
 		fmt.Fprintln(os.Stderr, "Add a \"scripts\" section to package.json to see commands here.")
