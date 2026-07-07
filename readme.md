@@ -70,9 +70,9 @@ Releases are automated via GitHub Actions. The recommended way to cut a release
 is to bump the version:
 
 1. Update the `VERSION` file (e.g. `1.2.3`) in a pull request and merge it to
-   `master`.
+   `main`.
 
-When CI passes on `master`, it checks whether a `v<VERSION>` tag already exists.
+When CI passes on `main`, it checks whether a `v<VERSION>` tag already exists.
 If it doesn't, CI calls the release workflow to build, publish, and update the
 Homebrew formula.
 

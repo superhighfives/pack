@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 permissions:
@@ -38,12 +38,12 @@ jobs:
       - name: Test
         run: go test ./...
 
-  # On a push to master, release automatically when VERSION names a tag that
+  # On a push to main, release automatically when VERSION names a tag that
   # doesn't exist yet. Bump VERSION in a PR and the merge cuts the release.
   check-version:
     name: Check version
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
